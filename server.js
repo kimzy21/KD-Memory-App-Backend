@@ -33,7 +33,9 @@ connectDB();
 
 let app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "*", // Allow all for local testing
+}));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
@@ -101,20 +103,12 @@ app.post("/notes", async (req, res) => {
   res.json({ success: true });
 });
 
-/* -------- HEALTH -------- */
-app.get("/health", (req, res) => {
-  res.status(200).send("OK");
-});
 
 app.use((req, res) => {
   res.status(404).send("Resource not found");
 }); 
 
-const PORT = process.env.PORT || 3000;
-
+const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`);
-  if (!process.env.PORT) {
-    console.log(`🌐 BrainCart website: http://localhost:${PORT}`);
-  }
+  console.log(`🌸 Server running on port ${PORT}`);
 });
