@@ -17,15 +17,13 @@ const uri = `${dbPrefix}${dbUser}:${dbPassword}${dbHost}/${dbName}${dbParams}`;
 
 const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
 
-let db1;
+let db;
 
-//connection to mongodb asynchronously
-//if connection fails, throw error and according message - this can be seen in real time in the backend and terminal
 async function connectDB() {
   try {
     await client.connect();
     console.log('Connected to MongoDB');
-    db1 = client.db(dbName);
+    db = client.db(dbName);
   } catch (err) {
     console.error('MongoDB connection error:', err);
   }
@@ -36,10 +34,26 @@ connectDB();
 let app = express();
 
 app.use(cors());
-
 app.use(express.static(path.join(__dirname, "public")));
-
 app.use(express.json());
+
+/* ---------- REQUEST LOGGING MIDDLEWARE ---------- */
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
+// ---------- SERVE IMAGES FROM Assets ----------
+app.use("/Assets", (req, res, next) => {
+  const fullPath = path.join(__dirname, "Assets", req.path);
+
+  fs.access(fullPath, fs.constants.F_OK, (err) => {
+    if (err) return res.status(404).send("Image not found");
+    next();
+  });
+});
+
+app.use("/Assets", express.static(path.join(__dirname, "Assets")));
 
 /* -------- LOGIN -------- */
 app.post("/login", (req, res) => {
@@ -54,13 +68,13 @@ app.post("/login", (req, res) => {
 
 /* -------- PHOTOS -------- */
 app.get("/photos", async (req, res) => {
-  const photos = await db1.collection("Photos").find({}).toArray();
+  const photos = await db.collection("Photos").find({}).toArray();
   res.json(photos);
 });
 
 /* -------- TIMELINE -------- */
 app.get("/timeline", async (req, res) => {
-  const timeline = await db1
+  const timeline = await db
     .collection("Timeline")
     .find({})
     .sort({ date: 1 })
@@ -70,7 +84,7 @@ app.get("/timeline", async (req, res) => {
 
 /* -------- NOTES -------- */
 app.get("/notes", async (req, res) => {
-  const notes = await db1
+  const notes = await db
     .collection("Notes")
     .find({})
     .sort({ createdAt: -1 })
@@ -79,7 +93,7 @@ app.get("/notes", async (req, res) => {
 });
 
 app.post("/notes", async (req, res) => {
-  await db1.collection("Notes").insertOne({
+  await db.collection("Notes").insertOne({
     sender: req.body.sender,
     message: req.body.message,
     createdAt: new Date()

@@ -1,119 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>Our Little Timeline 💕</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
-  <link rel="stylesheet" href="styles.css" />
+    <meta charset="UTF-8" />
+    <title>Our Little Timeline 💕</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+    <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
-<div id="app">
+    <div id="app">
 
-  <!-- LOGIN -->
-  <section v-if="page === 'login'" class="login">
-    <h1>🔐 Our Secret</h1>
-    <input type="password" v-model="password" placeholder="Enter secret" />
-    <button @click="login">Enter 💖</button>
-  </section>
+        <!-- LOGIN -->
+        <section v-if="page === 'login'" class="login">
+            <h1>🔐 Our Secret</h1>
+            <input type="password" v-model="password" placeholder="Enter secret" />
+            <button @click="login">Enter 💖</button>
+        </section>
 
-  <!-- NAV -->
-  <nav v-if="page !== 'login'">
-    <button @click="page='home'">Home</button>
-    <button @click="page='album'">Photos</button>
-    <button @click="page='timeline'">Timeline</button>
-    <button @click="page='notes'">Notes</button>
-  </nav>
+        <!-- NAV -->
+        <nav v-if="page !== 'login'">
+            <button @click="page='home'">Home</button>
+            <button @click="page='album'">Photos</button>
+            <button @click="page='timeline'">Timeline</button>
+            <button @click="page='notes'">Notes</button>
+        </nav>
 
-  <!-- HOME -->
-  <section v-if="page === 'home'" class="home">
-    <h2>Hi my love 💕</h2>
-    <p>I made this for us.</p>
-    <p>Every memory here matters to me.</p>
-  </section>
+        <!-- HOME -->
+        <section v-if="page === 'home'" class="home">
+            <h2>Hi my love 💕</h2>
+            <p>I made this for us.</p>
+            <p>Every memory here matters to me.</p>
+        </section>
 
-  <!-- PHOTO ALBUM -->
-  <section v-if="page === 'album'" class="grid">
-    <div v-for="p in photos" class="card">
-      <img :src="p.imageUrl" />
-      <p>{{ p.caption }}</p>
-      <small>{{ formatDate(p.date) }}</small>
+        <!-- PHOTO ALBUM -->
+        <section v-if="page === 'album'" class="grid">
+            <div v-for="p in photos" class="card" @click="openCarousel(p.photos, p.description)">
+                <img :src="p.cover" />
+                <p>{{ p.title }}</p>
+                <small>{{ formatDate(p.date) }}</small>
+            </div>
+        </section>
+
+        <!-- CAROUSEL MODAL -->
+        <div v-if="showCarousel" class="carousel-modal" @click.self="closeCarousel">
+            <!-- Close icon (top-right) -->
+            <i class="fa-regular fa-circle-xmark close-icon" @click="closeCarousel"></i>
+            <img :src="carouselPhotos[currentIndex]" />
+            <p class="carousel-description">{{ currentPhotoDescription }}</p>
+            <!-- Thumbnails -->
+            <div class="carousel-thumbnails">
+                <img v-for="(photo, index) in carouselPhotos" :key="index" :src="photo"
+                    :class="{ active: index === currentIndex }" @click="currentIndex = index" />
+            </div>
+            <!-- Navigation Buttons -->
+            <div>
+                <button @click="prevPhoto">Prev</button>
+                <button @click="nextPhoto">Next</button>
+            </div>
+        </div>
+
+        <!-- TIMELINE -->
+        <section v-if="page === 'timeline'" class="timeline">
+            <div v-for="t in timeline" class="timeline-item">
+                <h3>{{ t.title }}</h3>
+                <p>{{ t.description }}</p>
+                <small>{{ formatDate(t.date) }}</small>
+            </div>
+        </section>
+
+        <!-- NOTES -->
+        <section v-if="page === 'notes'" class="notes">
+            <div v-for="n in notes" class="note">
+                <strong>{{ n.sender }}</strong>
+                <p>{{ n.message }}</p>
+                <small>{{ formatDate(n.createdAt) }}</small>
+            </div>
+
+            <textarea v-model="newNote" placeholder="Write something cute 💌"></textarea>
+            <button @click="sendNote">Send</button>
+        </section>
+
     </div>
-  </section>
 
-  <!-- TIMELINE -->
-  <section v-if="page === 'timeline'" class="timeline">
-    <div v-for="t in timeline" class="timeline-item">
-      <h3>{{ t.title }}</h3>
-      <p>{{ t.description }}</p>
-      <small>{{ formatDate(t.date) }}</small>
-    </div>
-  </section>
+    <script>
+        const API = "https://kd-memory-app-backend.onrender.com";
 
-  <!-- NOTES -->
-  <section v-if="page === 'notes'" class="notes">
-    <div v-for="n in notes" class="note">
-      <strong>{{ n.sender }}</strong>
-      <p>{{ n.message }}</p>
-      <small>{{ formatDate(n.createdAt) }}</small>
-    </div>
-
-    <textarea v-model="newNote" placeholder="Write something cute 💌"></textarea>
-    <button @click="sendNote">Send</button>
-  </section>
-
-</div>
-
-<script>
-new Vue({
-  el: "#app",
-  data: {
-    page: "login",
-    password: "",
-    photos: [],
-    timeline: [],
-    notes: [],
-    newNote: "",
-    sender: "Me"
-  },
-  methods: {
-    async login() {
-      const res = await fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: this.password })
-      });
-      if (res.ok) {
-        this.page = "home";
-        this.loadAll();
-      } else {
-        alert("Wrong secret 😭");
-      }
-    },
-    async loadAll() {
-      this.photos = await (await fetch("/photos")).json();
-      this.timeline = await (await fetch("/timeline")).json();
-      this.notes = await (await fetch("/notes")).json();
-    },
-    async sendNote() {
-      if (!this.newNote.trim()) return;
-      await fetch("/notes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sender: this.sender,
-          message: this.newNote
-        })
-      });
-      this.newNote = "";
-      this.notes = await (await fetch("/notes")).json();
-    },
-    formatDate(d) {
-      return new Date(d).toDateString();
-    }
-  }
-});
-</script>
+        new Vue({
+            el: "#app",
+            data: {
+                page: "login",
+                password: "",
+                photos: [],
+                timeline: [],
+                notes: [],
+                newNote: "",
+                sender: "Me",
+                showCarousel: false,
+                carouselPhotos: [],
+                currentIndex: 0,
+                currentPhotoDescription: ""
+            },
+            methods: {
+                async login() {
+                    const res = await fetch(`${API}/login`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ password: this.password })
+                    });
+                    if (res.ok) {
+                        this.page = "home";
+                        this.loadAll();
+                    } else {
+                        alert("Wrong secret 😭");
+                    }
+                },
+                async loadAll() {
+                    this.photos = await (await fetch(`${API}/photos`)).json();
+                    this.timeline = await (await fetch(`${API}/timeline`)).json();
+                    this.notes = await (await fetch(`${API}/notes`)).json();
+                },
+                async sendNote() {
+                    if (!this.newNote.trim()) return;
+                    await fetch(`${API}/notes`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            sender: this.sender,
+                            message: this.newNote
+                        })
+                    });
+                    this.newNote = "";
+                    this.notes = await (await fetch(`${API}/notes`)).json();
+                },
+                formatDate(d) {
+                    return new Date(d).toDateString();
+                },
+                openCarousel(photoArray, description) {
+                    this.carouselPhotos = photoArray;
+                    this.currentIndex = 0;
+                    this.currentPhotoDescription = description || "";
+                    this.showCarousel = true;
+                },
+                closeCarousel() {
+                    this.showCarousel = false;
+                    this.carouselPhotos = [];
+                    this.currentPhotoDescription = "";
+                },
+                nextPhoto() {
+                    if (this.currentIndex < this.carouselPhotos.length - 1) this.currentIndex++;
+                },
+                prevPhoto() {
+                    if (this.currentIndex > 0) this.currentIndex--;
+                }
+            }
+        });
+    </script>
 </body>
+
 </html>
