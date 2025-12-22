@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Our Little Timeline 💕</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+<div id="app">
+
+  <!-- LOGIN -->
+  <section v-if="page === 'login'" class="login">
+    <h1>🔐 Our Secret</h1>
+    <input type="password" v-model="password" placeholder="Enter secret" />
+    <button @click="login">Enter 💖</button>
+  </section>
+
+  <!-- NAV -->
+  <nav v-if="page !== 'login'">
+    <button @click="page='home'">Home</button>
+    <button @click="page='album'">Photos</button>
+    <button @click="page='timeline'">Timeline</button>
+    <button @click="page='notes'">Notes</button>
+  </nav>
+
+  <!-- HOME -->
+  <section v-if="page === 'home'" class="home">
+    <h2>Hi my love 💕</h2>
+    <p>I made this for us.</p>
+    <p>Every memory here matters to me.</p>
+  </section>
+
+  <!-- PHOTO ALBUM -->
+  <section v-if="page === 'album'" class="grid">
+    <div v-for="p in photos" class="card">
+      <img :src="p.imageUrl" />
+      <p>{{ p.caption }}</p>
+      <small>{{ formatDate(p.date) }}</small>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section v-if="page === 'timeline'" class="timeline">
+    <div v-for="t in timeline" class="timeline-item">
+      <h3>{{ t.title }}</h3>
+      <p>{{ t.description }}</p>
+      <small>{{ formatDate(t.date) }}</small>
+    </div>
+  </section>
+
+  <!-- NOTES -->
+  <section v-if="page === 'notes'" class="notes">
+    <div v-for="n in notes" class="note">
+      <strong>{{ n.sender }}</strong>
+      <p>{{ n.message }}</p>
+      <small>{{ formatDate(n.createdAt) }}</small>
+    </div>
+
+    <textarea v-model="newNote" placeholder="Write something cute 💌"></textarea>
+    <button @click="sendNote">Send</button>
+  </section>
+
+</div>
+
+<script>
+new Vue({
+  el: "#app",
+  data: {
+    page: "login",
+    password: "",
+    photos: [],
+    timeline: [],
+    notes: [],
+    newNote: "",
+    sender: "Me"
+  },
+  methods: {
+    async login() {
+      const res = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: this.password })
+      });
+      if (res.ok) {
+        this.page = "home";
+        this.loadAll();
+      } else {
+        alert("Wrong secret 😭");
+      }
+    },
+    async loadAll() {
+      this.photos = await (await fetch("/photos")).json();
+      this.timeline = await (await fetch("/timeline")).json();
+      this.notes = await (await fetch("/notes")).json();
+    },
+    async sendNote() {
+      if (!this.newNote.trim()) return;
+      await fetch("/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sender: this.sender,
+          message: this.newNote
+        })
+      });
+      this.newNote = "";
+      this.notes = await (await fetch("/notes")).json();
+    },
+    formatDate(d) {
+      return new Date(d).toDateString();
+    }
+  }
+});
+</script>
+</body>
+</html>

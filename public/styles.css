@@ -1,0 +1,55 @@
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: #fff0f6;
+  margin: 0;
+  text-align: center;
+}
+
+.login {
+  margin-top: 100px;
+}
+
+input, textarea {
+  padding: 10px;
+  width: 80%;
+  max-width: 300px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  background: #ff5c8a;
+  color: white;
+  cursor: pointer;
+}
+
+nav {
+  background: #ffb3c6;
+  padding: 10px;
+}
+
+nav button {
+  margin: 5px;
+}
+
+.grid, .timeline, .notes {
+  padding: 20px;
+}
+
+.card, .note, .timeline-item {
+  background: white;
+  margin: 15px auto;
+  padding: 15px;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 14px;
+}
+
+img {
+  width: 100%;
+  border-radius: 12px;
+}

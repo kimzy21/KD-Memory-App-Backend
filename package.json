@@ -1,0 +1,26 @@
+{
+  "name": "kd-memory-app-backend",
+  "version": "1.0.0",
+  "description": "Memory app for KD",
+  "main": "server.js",
+  "scripts": {
+    "test": "node server.js",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kimzy21/KD-Memory-App-Backend.git"
+  },
+  "author": "Kimberly Alexya Ramasamy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kimzy21/KD-Memory-App-Backend/issues"
+  },
+  "homepage": "https://github.com/kimzy21/KD-Memory-App-Backend#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongodb": "^7.0.0"
+  }
+}
