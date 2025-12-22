@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/png" href="/Assets/icon.png">
 </head>
 
 <body>
@@ -63,11 +64,39 @@
         </div>
 
         <!-- TIMELINE -->
-        <section v-if="page === 'timeline'" class="timeline">
-            <div v-for="t in timeline" class="timeline-item">
-                <h3>{{ t.title }}</h3>
-                <p>{{ t.description }}</p>
-                <small>{{ formatDate(t.date) }}</small>
+        <section v-if="page === 'timeline'" class="timeline-layout">
+
+            <!-- LEFT: Timeline spine -->
+            <div class="timeline-left">
+                <div class="timeline-wrapper-vertical">
+                    <div v-for="(month, index) in timelineMonths" :key="index" class="timeline-dot-vertical"
+                        :class="{ active: index === activeMonthIndex }" @click="activeMonthIndex = index">
+                        <span class="month-label">{{ month.label }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Events -->
+            <div class="timeline-right">
+                <div v-for="event in filteredEvents" :key="event._id" class="timeline-item clickable"
+                    :class="{ milestone: event.isMilestone }" @click="openEventModal(event)">
+
+                    <!-- DATE AT TOP -->
+                    <div class="timeline-date">
+                        {{ formatDate(event.date) }}
+                    </div>
+
+                    <h3>{{ event.title }}</h3>
+
+                    <!-- ✅ DESCRIPTION ON THE CARD -->
+                    <p v-if="event.description" class="timeline-description"> {{ event.description }}</p>
+
+                    <div v-if="event.images && event.images.length" class="event-images"
+                        @click.stop="openCarousel(event.images)">
+                        <img v-for="(img, i) in event.images" :key="i" :src="img" />
+                    </div>
+
+                </div>
             </div>
         </section>
 
@@ -101,7 +130,76 @@
                 showCarousel: false,
                 carouselPhotos: [],
                 currentIndex: 0,
-                currentPhotoDescription: ""
+                currentPhotoDescription: "",
+                activeMonthIndex: 0,
+                timelineMonths: [],
+                milestones: []
+            },
+            created() {
+                this.timelineStart = new Date(2025, 9, 1);      // Oct 1, 2025
+                this.relationshipStart = new Date(2025, 10, 1); // Nov 1, 2025
+
+                const today = new Date();
+
+                const monthsDiff =
+                    (today.getFullYear() - this.timelineStart.getFullYear()) * 12 +
+                    (today.getMonth() - this.timelineStart.getMonth()) + 1;
+
+                this.timelineMonths = Array.from({ length: monthsDiff }, (_, i) => {
+                    const d = new Date(
+                        this.timelineStart.getFullYear(),
+                        this.timelineStart.getMonth() + i,
+                        1
+                    );
+
+                    return {
+                        date: d,
+                        label: d.toLocaleString("default", { month: "short", year: "numeric" })
+                    };
+                });
+            },
+            computed: {
+                filteredEvents() {
+                    if (!this.timelineMonths.length) return [];
+
+                    const month = this.timelineMonths[this.activeMonthIndex];
+                    const monthDate = new Date(month.date);
+
+                    // Normalize dates
+                    monthDate.setHours(0, 0, 0, 0);
+
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    // Normal events for this month
+                    const events = this.timeline.filter(event => {
+                        const eDate = new Date(event.date);
+                        return (
+                            eDate.getMonth() === monthDate.getMonth() &&
+                            eDate.getFullYear() === monthDate.getFullYear()
+                        );
+                    });
+
+                    // 🚨 NO milestones before December 2025
+                    const firstMilestoneDate = new Date(2025, 11, 1); // Dec 1, 2025
+                    firstMilestoneDate.setHours(0, 0, 0, 0);
+
+                    if (monthDate >= firstMilestoneDate && today >= monthDate) {
+                        const monthsTogether =
+                            (monthDate.getFullYear() - this.relationshipStart.getFullYear()) * 12 +
+                            (monthDate.getMonth() - this.relationshipStart.getMonth());
+
+                        events.unshift({
+                            _id: `milestone-${monthsTogether}`,
+                            title: `✨ ${monthsTogether} month${monthsTogether > 1 ? "s" : ""} together`,
+                            date: monthDate,          // ✅ fixes Invalid Date
+                            images: [],
+                            isMilestone: true
+                        });
+                    }
+
+                    return events;
+                }
             },
             methods: {
                 async login() {
@@ -138,7 +236,7 @@
                 formatDate(d) {
                     return new Date(d).toDateString();
                 },
-                openCarousel(photoArray, description) {
+                openCarousel(photoArray, description = "") {
                     this.carouselPhotos = photoArray;
                     this.currentIndex = 0;
                     this.currentPhotoDescription = description || "";
