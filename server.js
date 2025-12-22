@@ -3,7 +3,6 @@ var express = require("express");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
-const multer = require("multer");
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
@@ -19,23 +18,6 @@ const uri = `${dbPrefix}${dbUser}:${dbPassword}${dbHost}/${dbName}${dbParams}`;
 const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
 
 let db;
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "Assets"));
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const base = path.basename(file.originalname, ext)
-      .replace(/\s+/g, "-")
-      .toLowerCase();
-
-    const uniqueName = `${Date.now()}-${base}${ext}`;
-    cb(null, uniqueName);
-  }
-});
-
-const upload = multer({ storage });
 
 async function connectDB() {
   try {
@@ -90,33 +72,6 @@ app.get("/photos", async (req, res) => {
   res.json(photos);
 });
 
-app.post("/photos", upload.array("photos", 10), async (req, res) => {
-  try {
-    const { title, description, date } = req.body;
-
-    if (!title || !req.files.length) {
-      return res.status(400).json({ error: "Title and photos required" });
-    }
-
-    const photoPaths = req.files.map(f => `Assets/${f.filename}`);
-
-    const doc = {
-      title,
-      description,
-      date: new Date(date),
-      cover: photoPaths[0],     // 👈 FIRST IMAGE = COVER
-      photos: photoPaths
-    };
-
-    await db.collection("Photos").insertOne(doc);
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Upload failed" });
-  }
-});
-
 /* -------- TIMELINE -------- */
 app.get("/timeline", async (req, res) => {
   const timeline = await db
@@ -125,34 +80,6 @@ app.get("/timeline", async (req, res) => {
     .sort({ date: 1 })
     .toArray();
   res.json(timeline);
-});
-
-app.post("/timeline", upload.array("images", 10), async (req, res) => {
-  try {
-    const { title, description, date } = req.body;
-
-    if (!title || !date) {
-      return res.status(400).json({ error: "Title and date required" });
-    }
-
-    const imagePaths = req.files
-      ? req.files.map(f => `Assets/${f.filename}`)
-      : [];
-
-    const doc = {
-      title,
-      description,
-      date: new Date(date),
-      images: imagePaths
-    };
-
-    await db.collection("Timeline").insertOne(doc);
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Timeline upload failed" });
-  }
 });
 
 /* -------- NOTES -------- */
