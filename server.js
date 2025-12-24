@@ -103,12 +103,16 @@ app.post("/notes", async (req, res) => {
   res.json({ success: true });
 });
 
+/* -------- HEALTH -------- */
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
 
 app.use((req, res) => {
   res.status(404).send("Resource not found");
 }); 
 
-const PORT = 3000;
+const PORT = process.env.DB_PARAMS || 3000;
 app.listen(PORT, () => {
   console.log(`🌸 Server running on port ${PORT}`);
 });
