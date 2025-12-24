@@ -31,9 +31,68 @@
 
         <!-- HOME -->
         <section v-if="page === 'home'" class="home">
-            <h2>Hi my love 💕</h2>
-            <p>I made this for us.</p>
-            <p>Every memory here matters to me.</p>
+
+            <!-- HERO -->
+            <div class="home-hero">
+                <h2>Hi my love 💕</h2>
+                <p class="hero-subtitle">
+                    I made this little space just for us.
+                    Every memory here matters to me.
+                </p>
+            </div>
+
+            <!-- INFO CARDS -->
+            <div class="home-sections">
+
+                <!-- How it works -->
+                <div class="home-card">
+                    <h3>How this works 📝</h3>
+                    <ul class="home-list">
+                        <li>📷 Upload photos and relive memories</li>
+                        <li>🕰️ Follow our timeline & milestones</li>
+                        <li>💌 Send sweet notes anytime</li>
+                        <li>🎨 Change colors to match our vibe</li>
+                    </ul>
+                </div>
+
+                <!-- Palettes -->
+                <div class="home-card">
+                    <h3>Pick a palette 🎨</h3>
+
+                    <div class="palette-group">
+                        <h4>Combined</h4>
+                        <div class="palette">
+                            <div v-for="color in palettes.combined" :key="color" class="color-box"
+                                :style="{ background: color }" @click="setPalette(palettes.combined)"></div>
+                        </div>
+                    </div>
+
+                    <div class="palette-group">
+                        <h4>Mine</h4>
+                        <div class="palette">
+                            <div v-for="color in palettes.mine1" :key="color" class="color-box"
+                                :style="{ background: color }" @click="setPalette(palettes.mine1)"></div>
+                        </div>
+                        <div class="palette">
+                            <div v-for="color in palettes.mine2" :key="color" class="color-box"
+                                :style="{ background: color }" @click="setPalette(palettes.mine2)"></div>
+                        </div>
+                    </div>
+
+                    <div class="palette-group">
+                        <h4>His</h4>
+                        <div class="palette">
+                            <div v-for="color in palettes.his1" :key="color" class="color-box"
+                                :style="{ background: color }" @click="setPalette(palettes.his1)"></div>
+                        </div>
+                        <div class="palette">
+                            <div v-for="color in palettes.his2" :key="color" class="color-box"
+                                :style="{ background: color }" @click="setPalette(palettes.his2)"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </section>
 
         <!-- PHOTO ALBUM -->
@@ -123,6 +182,17 @@
     </script>
 
     <script>
+        // Helper function to darken a hex color
+        function darkenColor(hex, amount = 20) {
+            let c = hex.replace('#', '');
+            if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+            let num = parseInt(c, 16);
+            let r = Math.max(0, ((num >> 16) - amount));
+            let g = Math.max(0, (((num >> 8) & 0x00FF) - amount));
+            let b = Math.max(0, ((num & 0x0000FF) - amount));
+            return `rgb(${r},${g},${b})`;
+        }
+
         new Vue({
             el: "#app",
             data: {
@@ -139,7 +209,30 @@
                 currentPhotoDescription: "",
                 activeMonthIndex: 0,
                 timelineMonths: [],
-                milestones: []
+                milestones: [],
+                palettes: {
+                    combined: ["#2093c3", "#65c9d4", "#ffdbe9", "#ff77ad"],
+                    mine1: ["#cfb28f", "#c1706c", "#f0e6db", "#e4d4c0"],
+                    mine2: ["#ffb3c6", "#ff5c8a", "#ffe6f0", "#fff0f6"], // Pink theme
+                    his1: ["#9f906f", "#706953", "#d8bca1", "#fbf4ee"],
+                    his2: ["#d7e9f5", "#b6d5eb", "#7fbadc", "#54a5d5"] // secondary earthy/blue theme
+                },
+                currentPalette: [],
+                postType: 'album',
+
+                albumForm: {
+                    title: '',
+                    description: '',
+                    date: '',
+                    files: []
+                },
+
+                timelineForm: {
+                    title: '',
+                    description: '',
+                    date: '',
+                    files: []
+                }
             },
             created() {
                 this.timelineStart = new Date(2025, 9, 1);      // Oct 1, 2025
@@ -220,6 +313,73 @@
                     } else {
                         alert("Wrong secret 😭");
                     }
+                },
+                setPalette(colors) {
+                    this.currentPalette = colors;
+
+                    // Base colors
+                    const primary = colors[0];   // buttons, dots
+                    const secondary = colors[1]; // nav
+                    const accent = colors[2];    // background / soft areas
+                    const highlight = colors[3]; // hover / active
+
+                    // Darker variants (for timeline spine & emphasis)
+                    const backboneColor = darkenColor(accent, 35);
+                    const activeDotColor = darkenColor(primary, 25);
+
+                    /* ---------- CSS VARIABLES ---------- */
+                    document.documentElement.style.setProperty('--primary-color', primary);
+                    document.documentElement.style.setProperty('--secondary-color', secondary);
+                    document.documentElement.style.setProperty('--accent-color', accent);
+                    document.documentElement.style.setProperty('--highlight-color', highlight);
+                    document.documentElement.style.setProperty('--backbone-color', backboneColor);
+
+                    /* ---------- BODY ---------- */
+                    document.body.style.background = accent;
+
+                    /* ---------- NAV ---------- */
+                    const nav = document.querySelector('nav');
+                    if (nav) nav.style.background = secondary;
+
+                    /* ---------- BUTTONS ---------- */
+                    document.querySelectorAll('button').forEach(btn => {
+                        btn.style.background = primary;
+                        btn.style.color = '#fff';
+                    });
+
+                    /* ---------- TIMELINE DOTS ---------- */
+                    document.documentElement.style.setProperty(
+                        '--timeline-dot-color',
+                        primary
+                    );
+
+                    document.documentElement.style.setProperty(
+                        '--timeline-dot-active-color',
+                        darkenColor(primary, 25)
+                    );
+
+
+                    /* ---------- DYNAMIC HOVER + ICONS ---------- */
+                    const styleEl =
+                        document.getElementById('dynamic-hover') ||
+                        document.createElement('style');
+
+                    styleEl.id = 'dynamic-hover';
+                    styleEl.innerHTML = `
+                        button:hover {
+                            background: ${highlight} !important;
+                        }
+
+                        .close-icon:hover {
+                            color: ${highlight} !important;
+                        }
+
+                        .timeline-dot-vertical:hover {
+                            transform: scale(1.25);
+                            background: ${highlight};
+                        }
+                    `;
+                    document.head.appendChild(styleEl);
                 },
                 async loadAll() {
                     this.photos = await (await fetch("/photos")).json();
