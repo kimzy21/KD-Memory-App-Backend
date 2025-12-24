@@ -33,6 +33,11 @@ connectDB();
 
 let app = express();
 
+app.get("/config.js", (req, res) => {
+  res.type("application/javascript");
+  res.send(`window.API_URL = "${process.env.API_URL || ""}";`);
+});
+
 app.use(cors({
   origin: "*", // Allow all for local testing
 }));

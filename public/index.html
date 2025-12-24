@@ -114,9 +114,15 @@
 
     </div>
 
-    <script>
-        const API = "http://localhost:3000";
+    <!-- Inject API URL from server -->
+    <script src="/config.js"></script>
 
+    <!-- Map global value to local constant -->
+    <script>
+      const API = window.API_URL;
+    </script>
+
+    <script>
         new Vue({
             el: "#app",
             data: {
@@ -216,13 +222,13 @@
                     }
                 },
                 async loadAll() {
-                    this.photos = await (await fetch(`${API}/photos`)).json();
-                    this.timeline = await (await fetch(`${API}/timeline`)).json();
-                    this.notes = await (await fetch(`${API}/notes`)).json();
+                    this.photos = await (await fetch("/photos")).json();
+                    this.timeline = await (await fetch("/timeline")).json();
+                    this.notes = await (await fetch("/notes")).json();
                 },
                 async sendNote() {
                     if (!this.newNote.trim()) return;
-                    await fetch(`${API}/notes`, {
+                    await fetch("/notes", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -231,7 +237,7 @@
                         })
                     });
                     this.newNote = "";
-                    this.notes = await (await fetch(`${API}/notes`)).json();
+                    this.notes = await (await fetch("/notes")).json();
                 },
                 formatDate(d) {
                     return new Date(d).toDateString();
